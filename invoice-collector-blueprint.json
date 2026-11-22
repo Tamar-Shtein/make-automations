@@ -1,0 +1,92 @@
+{
+    "name": "Invoice Collector – Gmail → Google Sheets",
+    "flow": [
+        {
+            "id": 1,
+            "module": "google-email:triggerWatchNewEmails",
+            "version": 4,
+            "parameters": {
+                "__IMTCONN__": 13304333,
+                "filterType": "gmailSearch",
+                "q": "(has:attachment OR חשבונית OR invoice OR receipt) after:2026/11/15",
+                "format": "full",
+                "markSeen": false,
+                "limit": 10
+            },
+            "mapper": {},
+            "metadata": {
+                "designer": { "x": 0, "y": 0, "name": "Gmail – מיילים חדשים" }
+            }
+        },
+        {
+            "id": 2,
+            "module": "builtin:BasicRouter",
+            "version": 1,
+            "mapper": null,
+            "metadata": {
+                "designer": { "x": 300, "y": 0 }
+            },
+            "routes": [
+                {
+                    "flow": [
+                        {
+                            "id": 3,
+                            "module": "google-sheets:addRow",
+                            "version": 2,
+                            "parameters": {
+                                "__IMTCONN__": 13304969
+                            },
+                            "filter": {
+                                "name": "האם זו חשבונית?",
+                                "conditions": [
+                                    [{ "a": "{{1.subject}}", "o": "text:contain:ci", "b": "חשבונית" }],
+                                    [{ "a": "{{1.subject}}", "o": "text:contain:ci", "b": "invoice" }],
+                                    [{ "a": "{{1.subject}}", "o": "text:contain:ci", "b": "receipt" }],
+                                    [{ "a": "{{1.fullTextBody}}", "o": "text:contain:ci", "b": "חשבונית" }],
+                                    [{ "a": "{{1.fullTextBody}}", "o": "text:contain:ci", "b": "invoice" }],
+                                    [{ "a": "{{1.fullTextBody}}", "o": "text:contain:ci", "b": "receipt" }]
+                                ]
+                            },
+                            "mapper": {
+                                "mode": "map",
+                                "spreadsheetId": "1ychwfRH7RNLTTAU9fWzabPYARr9E6-VoK1nx7STGSbo",
+                                "sheetId": "גיליון1",
+                                "tableFirstRow": "A1:Z1",
+                                "insertUnformatted": false,
+                                "valueInputOption": "USER_ENTERED",
+                                "insertDataOption": "INSERT_ROWS",
+                                "values": {
+                                    "0": "{{formatDate(1.internalDate; \"YYYY-MM-DD HH:mm\")}}",
+                                    "1": "{{1.fromName}} <{{1.fromEmail}}>",
+                                    "2": "{{1.subject}}",
+                                    "3": "{{first(split(trim(1.fullTextBody); \" \"))}}"
+                                }
+                            },
+                            "metadata": {
+                                "designer": { "x": 600, "y": 0, "name": "הוספת חשבונית לגיליון" }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "metadata": {
+        "instant": false,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTriggerLast": true,
+            "sequential": false,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": { "orphans": [] },
+        "zone": "eu1.make.com"
+    },
+    "scheduling": { "type": "indefinitely", "interval": 900 }
+}
